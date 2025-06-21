@@ -1,3 +1,7 @@
+# github-osrcp.py
+# Created By: Penn Hess
+
+# imports
 import os
 import csv
 import sys
@@ -8,10 +12,14 @@ from github import Auth
 from dotenv import load_dotenv
 load_dotenv()
 
+# get the auth token from .env
 AUTH_TOKEN = os.getenv('GITHUB_AUTH_TOKEN')
 
 def main(csv_file_path, verbose=False, output_path='./contributors.csv'):
+  
   public_repos = []
+  
+  # get the list of repos from the CSV
   with open(csv_file_path, newline='') as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
@@ -23,10 +31,13 @@ def main(csv_file_path, verbose=False, output_path='./contributors.csv'):
 
   users = set()
   user_email = {}
+  user_contributions = {}
   repo_count = len(public_repos)
   total_merge_count = 0
 
+  # get merged pull requests for each repository
   for repo_name in public_repos:
+    
     repo = github_client.get_repo(repo_name)
     pulls = repo.get_pulls(state='merged', sort='created', base='main')
 
@@ -34,29 +45,52 @@ def main(csv_file_path, verbose=False, output_path='./contributors.csv'):
 
     if verbose:
       print(f"----- Merged Pull Requests for {repo.name} -----")
+      
+    # get user data from each pull request
     for pr in pulls:
+      
       if verbose:
         print(f"PR #{pr.number}: {pr.title} by {pr.user.login} (Created at: {pr.created_at})")
+      
+      # get user loging and email from the PR  
       users.add(pr.user.login)
       user_email[pr.user.login] = pr.user.email
+      
+      # add the repo name to the user's contributions
+      if pr.user.login not in user_contributions:
+        user_contributions[pr.user.login] = set()
+      user_contributions[pr.user.login].add(repo.name)
+      
       repo_merge_count += 1
+      
     if verbose:
       print(f"Total merged PRs in {repo.name}: {repo_merge_count}")
       print("--------------------------------------------------\n")
 
     total_merge_count += repo_merge_count
 
-  # Handle output path logic
+  # handle output path logic
   if output_path.endswith('/'):
     output_path = os.path.join(output_path, 'contributors.csv')
 
+  # write each user and their contributions to the CSV
   with open(output_path, 'w', newline='') as csvfile:
+    
     writer = csv.writer(csvfile)
-    writer.writerow(['username', 'profile_url', 'email'])
+    writer.writerow(['username', 'profile_url', 'email', 'contributions'])
+    
     for user in users:
+      # get user profile URL and email
       email = user_email[user]
       profile_url = f"https://github.com/{user}"
-      writer.writerow([user, profile_url, email])
+      
+      # get user contributions and convert them to a string like "['repo1', 'repo2']"
+      contributions = user_contributions[user]
+      contributions_str = str(list(contributions))
+      
+      # write the user data to the CSV
+      writer.writerow([user, profile_url, email, contributions_str])
+      
   if verbose:
     print(f"Contributors have been written to {output_path}")
 
@@ -86,11 +120,12 @@ def print_help():
 
     Description:
       This script reads a CSV file of GitHub repositories, fetches all merged pull requests on the 'main' branch for each repo,
-      collects unique contributor usernames, profile urls and emails, written to a CSV file.
+      collects unique contributor usernames, profile urls, emails and contributions, written to a CSV file.
       Requires a GitHub personal access token set as the GITHUB_AUTH_TOKEN environment variable.
     """
   print(help_text)
 
+# main entry point with logic for args
 if __name__ == "__main__":
   verbose = False
   output_path = './contributors.csv'
