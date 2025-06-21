@@ -22,6 +22,7 @@ def main(csv_file_path, verbose=False, output_path='./contributors.csv'):
   github_client = Github(auth=auth)
 
   users = set()
+  user_email = {}
   repo_count = len(public_repos)
   total_merge_count = 0
 
@@ -37,6 +38,7 @@ def main(csv_file_path, verbose=False, output_path='./contributors.csv'):
       if verbose:
         print(f"PR #{pr.number}: {pr.title} by {pr.user.login} (Created at: {pr.created_at})")
       users.add(pr.user.login)
+      user_email[pr.user.login] = pr.user.email
       repo_merge_count += 1
     if verbose:
       print(f"Total merged PRs in {repo.name}: {repo_merge_count}")
@@ -50,10 +52,11 @@ def main(csv_file_path, verbose=False, output_path='./contributors.csv'):
 
   with open(output_path, 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
-    writer.writerow(['username', 'profile_url'])
+    writer.writerow(['username', 'profile_url', 'email'])
     for user in users:
+      email = user_email[user]
       profile_url = f"https://github.com/{user}"
-      writer.writerow([user, profile_url])
+      writer.writerow([user, profile_url, email])
   if verbose:
     print(f"Contributors have been written to {output_path}")
 
@@ -83,7 +86,7 @@ def print_help():
 
     Description:
       This script reads a CSV file of GitHub repositories, fetches all merged pull requests on the 'main' branch for each repo,
-      collects unique contributor usernames, and writes them (with profile URLs) to a CSV file.
+      collects unique contributor usernames, profile urls and emails, written to a CSV file.
       Requires a GitHub personal access token set as the GITHUB_AUTH_TOKEN environment variable.
     """
   print(help_text)

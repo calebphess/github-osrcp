@@ -2,7 +2,7 @@
 GitHub Open Source Repository Collection Platform
 
 ## About
-GitHub OSRCP is a platform designed to collect a list of contributors to open-source repositories hosted on GitHub. The script reads a CSV file of GitHub repositories, fetches all merged pull requests on the `main` branch for each repo, collects unique contributor usernames, and writes them (with profile URLs) to a CSV file.
+GitHub OSRCP is a platform designed to collect a list of contributors to open-source repositories hosted on GitHub. The script reads a CSV file of GitHub repositories, fetches all merged pull requests on the `main` branch for each repo, collects unique contributor usernames, emails profile urls, written to a CSV file.
 
 ### How It Works
 
